@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DOCX Compare embedded</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; margin: 0; }
+    header { padding: 12px 16px; background: #111; color: #fff; font-weight: 600; }
+    .status { padding: 8px 16px; color: #555; background: #f4f4f5; }
+    iframe { border: 0; width: 100%; height: calc(100vh - 78px); display: block; }
+  </style>
+</head>
+<body>
+  <!-- This page stands in for your application. The <iframe> hosts Syntheia DOCX Compare. -->
+  <header>Your application: DOCX Compare embedded</header>
+  <div class="status" id="status">Requesting embed token…</div>
+  <iframe id="frame" allow="clipboard-read; clipboard-write"></iframe>
+
+  <script>
+    const SYNTHEIA_APP = '__SYNTHEIA_APP__';
+    const WORKSPACE_ID = '__WORKSPACE_ID__';
+    const frame = document.getElementById('frame');
+    const statusEl = document.getElementById('status');
+
+    // Mint an embed token from YOUR backend (which holds the syn_… API key) and hand it to the
+    // iframe. The token is long-lived, so there is no refresh timer: we mint once per page load
+    // (and again on tab focus as a cheap safety net). The app swaps the token in place without
+    // remounting, so a loaded comparison is never lost and the user is never logged out.
+    async function pushToken() {
+      let data;
+      try {
+        data = await (await fetch('/session')).json();
+      } catch (e) {
+        statusEl.textContent = 'Session request failed: ' + e;
+        return;
+      }
+      const { token, error, message } = data;
+      if (!token) {
+        statusEl.textContent = 'Failed to mint embed token: ' + JSON.stringify(error || message || data);
+        return;
+      }
+
+      if (!frame.src) {
+        // First token: point the iframe at DOCX Compare in iframe mode (no portal chrome).
+        frame.src = `${SYNTHEIA_APP}/workspace/${WORKSPACE_ID}/docx-compare?iframe=true`;
+      }
+      // The iframe's message listener can mount after the iframe 'load' event fires, so keep
+      // re-sending the token until it sticks (idempotent). Stops after ~20s.
+      let n = 0;
+      const send = () => frame.contentWindow.postMessage({ type: 'INIT_EMBED', accessToken: token }, SYNTHEIA_APP);
+      const t = setInterval(() => { send(); if (++n >= 40) clearInterval(t); }, 500);
+      send();
+      statusEl.textContent = 'DOCX Compare ready.';
+    }
+
+    pushToken();
+    // Safety net for a tab left open past the token TTL, no timer, just re-mint on return.
+    window.addEventListener('focus', pushToken);
+  </script>
+</body>
+</html>
