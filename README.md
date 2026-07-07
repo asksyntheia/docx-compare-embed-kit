@@ -106,7 +106,7 @@ node server.js                # Node 18+
 # open http://localhost:4500
 ```
 
-`http://localhost:4500` is already on the allowlist, so the demo renders out of the box.
+The demo page and token exchange run locally, but the embedded iframe only renders once your origin is allowlisted (step 3), since the browser blocks framing until then. To validate the flow before that, use the backend-only smoke test below (no allowlisting needed).
 
 > **Backend-only smoke test** (no browser/CSP needed) that confirms the key works end to end:
 > ```bash
