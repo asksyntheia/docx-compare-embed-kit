@@ -113,7 +113,7 @@ node server.js                # Node 18+
 > TOKEN=$(curl -s -XPOST https://api.us.supercomparer.com/auth/embed/token \
 >   -H "x-user-api-key: $SYN_API_KEY" | grep -oP '"token":"\K[^"]+')
 > curl -s -o redline.docx -w '%{http_code}\n' -XPOST https://api.us.supercomparer.com/reports/instant \
->   -H "Authorization: Bearer $TOKEN" -H "x-app-name: PORTAL" \
+>   -H "Authorization: Bearer $TOKEN" \
 >   -F "benchmarkDocument=@original.docx" -F "targetDocument=@revised.docx"
 > ```
 
